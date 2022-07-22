@@ -10,7 +10,7 @@ If you never create a sub directory in Studio before, do the following:
 - open a new Windows Explorer/ Finder window to browse your files
 - go to Documents/VuforiaStudio/Projects/<<YourProjectName>>/src/resources/Uploaded (Uploaded folder is only present if you added at least one file to the resources. Otherwise you need to create it manually!)
 - Create the new "Extensions" folder
-- Copy the VuLoader.js into the created Extensions folder
+- Create a VuLoader folder and copy the VuLoader.js into it OR if you manage your experience via Git use [submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules): `git submodule https://github.com/sbruegel/VuLoader.git src/phone/resources/Uploaded/Extensions/VuLoader`
 
 ### Load script with callback
 
@@ -19,7 +19,7 @@ The `onload` function is the callback so we are sure the script is loaded before
 ```
 // Add the Extension loader to html head
 var scriptTag = document.createElement('script');
-scriptTag.src = "app/resources/Uploaded/Extensions/VuLoader.js";
+scriptTag.src = "app/resources/Uploaded/Extensions/VuLoader/VuLoader.js";
 scriptTag.onload = initLoadFunction; // Here we will add a function which will define what we want to load exactly
 document.head.appendChild(scriptTag);
 ```
@@ -73,7 +73,9 @@ This asynchronous function helps you to load all kind of file and provides a cal
 
 **Example**:
 
-`VuLoader.getFile("app/resources/Uploaded/Interfaces/main-menu.html").then(content=>$scope.add2dRuntimeWdg(content))`
+```
+VuLoader.getFile("app/resources/Uploaded/Interfaces/main-menu.html").then(content=>$scope.add2dRuntimeWdg(content))
+```
 
 This will load a plain HTML interface and add it to the 2D Overlay
 
@@ -87,7 +89,9 @@ It additionally been used by `loadExtension`
 
 **Example**:
 
-`VuLoader.getScript('app/resources/Uploaded/Extensions/html2canvas/html2canvas.min.js');`
+```
+VuLoader.getScript('app/resources/Uploaded/Extensions/html2canvas/html2canvas.min.js');
+```
 
 A script i used to draw HTML stuff of the Webview of the Experience, on an canvas. This i can easily export to a base64 encoded image i can later attach to a 3D Image.
 Long story short: This allows you to show 2D Interface (HTML/CSS code) on HoloLens devices. Down side is of course that you can't interact with it. 
@@ -152,11 +156,11 @@ You can load dependencies (can detect if libs/files/shaders are already loaded) 
   });
 ```
 
-Here i loaded the Navigator Widget form OCTO Widgets and created one as soon the extension is loaded!
+Here i loaded the Navigator Widget form [Octo Widgets](https://github.com/steveghee/OCTO_Studio_extensions) and created one as soon the extension is loading!
 
 ### loadShader(shaderName, vertexHl, fragmentHl, vertexGl, fragmentGl)
 
-*note: this function is overloaded! If you just pass the first parameter the function is loading shader files like shaderName.vertex.glsl etc. instead of need all strings*
+*note: this function is overloaded! If you just pass the first parameter the function is loading shader files like shaderName.vertex.glsl etc. which needs to be present at `Uploaded/Extensions/Shader` folder instead of need all strings*
 - **shaderName**: name and identifier of the shader on the one hand it is what we use later on widget properties called `shader` on the other hand (if just this parameter is passed) it is the name of the files the function is looking for
 - **vertexHL**: string of the hlsl vertex shader
 - **fragmentHL**: string of the hlsl fragment+pixel shader
@@ -169,7 +173,9 @@ It additionally been used by `loadExtension`, if an extension has defined them i
 
 **Example**:
 
-`VuLoader.loadShader('flow_onedir_scale');`
+```
+VuLoader.loadShader('flow_onedir_scale');
+```
 
 ### widgetFactory
 This is a sub class init by VuLoader itself. This class is registering know widgets and holds the logic to add and create Widget Runtime templates on the fly.
