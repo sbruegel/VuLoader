@@ -62,7 +62,7 @@ $scope.$on("vuloaderready",function(){
 
 ## API
 
-The script creates if it gets loaded an global variable called `VuLoader`. Here you find all exposed function you can use later.
+The script creates, if it is loaded, an global variable called `VuLoader`. Here you find all exposed function you can later use.
 It is similar like THREE.js integration of Studio!
 
 ### getFile(url)
@@ -156,16 +156,16 @@ Here i loaded the Navigator Widget form OCTO Widgets and created one as soon the
 
 ### loadShader(shaderName, vertexHl, fragmentHl, vertexGl, fragmentGl)
 
-*note: this function is overloaded! If you just pass the first two parameter the function is loading shader files like shaderName.vertex.glsl etc. instesd of need all strings*
-- **shaderName**: name and identifier of the shader on the one hand it is what we use later on widget properties called shader on the other hand it is the name of the files the function is looking for
-- **vertexHL**: string of the hlsl vertex shader OR if just this is present it is the path of the location where to load the shader files from
+*note: this function is overloaded! If you just pass the first parameter the function is loading shader files like shaderName.vertex.glsl etc. instead of need all strings*
+- **shaderName**: name and identifier of the shader on the one hand it is what we use later on widget properties called `shader` on the other hand (if just this parameter is passed) it is the name of the files the function is looking for
+- **vertexHL**: string of the hlsl vertex shader
 - **fragmentHL**: string of the hlsl fragment+pixel shader
 - **vertexHL**: string of the glsl vertex shader
 - **fragmentHL**: string of the glsl fragment shader
 
-This asynchronous function can load Shaders from string or resources. The function expected that both the glsl and the hlsl version of the shader exists.
-The shader files needs to be present in as shaderName.shaderType.shaderLang, following the Vuforia Studio way of definition.
-It additionally been used by `loadExtension` if an extension has defined them in dependencies.
+This asynchronous function can load Shaders from string or resources and will inject them. The function expected that both the glsl and the hlsl version of the shader exists. (for mobile devices or HoloLens)
+The shader files needs to be present as shaderName.shaderType.shaderLang (testShader.fragment.hlsl), following the Vuforia Studio way of definition.
+It additionally been used by `loadExtension`, if an extension has defined them in their dependencies.
 
 **Example**:
 
