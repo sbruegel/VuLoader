@@ -8,9 +8,9 @@ First of we need to prepare our Vuforia Studio Project, to be able to use this s
 I highly recommend to create a separate "Extensions" folder into the default Uploaded folder in resources.
 If you never create a sub directory in Studio before, do the following:
 - open a new Windows Explorer/ Finder window to browse your files
-- go to Documents/VuforiaStudio/Projects/<<YourProjectName>>/src/resources/Uploaded (Uploaded folder is only present if you added at least one file to the resources. Otherwise you need to create it manually!)
+- go to Documents/VuforiaStudio/Projects/**YourProjectName**/src/resources/Uploaded (Uploaded folder is only present if you added at least one file to the resources. Otherwise you need to create it manually!)
 - Create the new "Extensions" folder
-- Create a VuLoader folder and copy the VuLoader.js into it OR if you manage your experience via Git use [submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules): `git submodule https://github.com/sbruegel/VuLoader.git src/phone/resources/Uploaded/Extensions/VuLoader`
+- Create a VuLoader folder and copy the VuLoader.js into it OR if you manage your experience via Git use [submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules): `git submodule add https://github.com/sbruegel/VuLoader.git src/phone/resources/Uploaded/Extensions/VuLoader`
 
 ### Load script with callback
 
@@ -93,13 +93,13 @@ It additionally been used by `loadExtension`
 VuLoader.getScript('app/resources/Uploaded/Extensions/html2canvas/html2canvas.min.js');
 ```
 
-A script i used to draw HTML stuff of the Webview of the Experience, on an canvas. This i can easily export to a base64 encoded image i can later attach to a 3D Image.
+A script i used to draw HTML stuff, of the Webview of the Experience, on an canvas. This canvas can easily exported to a base64 encoded image, which i can later attach as 3D Image texture.
 Long story short: This allows you to show 2D Interface (HTML/CSS code) on HoloLens devices. Down side is of course that you can't interact with it. 
 
 ### loadExtension(name, dependencies, path)
 
-- **name**: Name of the extension this is used to find the right path of data (VuLoader is looking at Uploaded/Extensions/<name>/..)
-- **dependencies**: an JSON defining all dependencies like files (array), angularModules (array), shader (array), widget (JSON) which contains the widgetTag (string), defaults (JSON of properties) and runtimeTemplate (function)
+- **name**: Name of the extension this is used to find the right path of data (VuLoader is looking at ..Uploaded/Extensions/**name**/..)
+- **dependencies**: a JSON defining all dependencies, like files (array), angularModules (array), shader (array), widget (JSON) which contains the widgetTag (string), defaults (JSON of properties) and runtimeTemplate (function)
 - **path**: an custom path where to search at (default /Uploaded/Extension)
 
 This asynchronous function will inject custom Widgets/Extensions to the `widgetFactory` it allows you nearly the same patterns like index.js / design.js of an custom Extension.
