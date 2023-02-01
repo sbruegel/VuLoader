@@ -7,7 +7,7 @@
 
   class VuLoader {
       constructor(runningOnHololens, rootPath) {
-        this.$injector = angular.element(document.querySelector('[ctrl-name="Home_TwxViewController"]')).injector();
+        this.$injector = angular.element(document.querySelector('[ctrl-name$="_TwxViewController"]')).injector();
         this.renderer = this.$injector.get('tml3dRenderer')
         this.$http = angular.element(document.body).injector().get('$http');
 
@@ -246,8 +246,8 @@
 
   class WidgetRegister {
     constructor(runningOnHololens) {
-      this.$injector = angular.element(document.querySelector('[ctrl-name="Home_TwxViewController"]')).injector();
-      this.scope = angular.element(document.querySelector('[ctrl-name="Home_TwxViewController"]')).scope();
+      this.$injector = angular.element(document.querySelector('[ctrl-name$="_TwxViewController"]')).injector();
+      this.scope = angular.element(document.querySelector('[ctrl-name$="_TwxViewController"]')).scope();
       // Get $compiler to add elements as angular compiled DOM object! see injectWidget()
       this.$compile = this.$injector.get("$compile");
       this.renderer = this.$injector.get('tml3dRenderer')
@@ -271,7 +271,10 @@
         "twx-dt-3dimage-button" : this.twxDt3dImageButton.bind(this),
         "twx-dt-3dpress-button" : this.twxDt3dPressButton.bind(this),
         "twx-dt-3dtoggle-button": this.twxDt3dToggleButton.bind(this),
-        "twx-dt-group"          : this.twxDtGroup.bind(this)
+        "twx-dt-group"          : this.twxDtGroup.bind(this),
+        // Current Implementation of Wayfinder doesn't allow init of widget. Because it use afterEnter Event in isolatedScope :(
+        "twx-dt-wayfinder"      : this.twxDtWayfinder.bind(this),
+        "twx-dt-3dleaderline"   : this.twxDt3dLeaderline.bind(this)
       }
     }
 
@@ -358,7 +361,7 @@
       let runtimeTemplate = `<twx-dt-image id="${initProps.id}" ng-src="{{me.src | trustUrl}}"
       src="" height="{{me.height}}" width="{{me.width}}" class="basic-3d-state-formatting {{me.class}}" sx="{{me.scale}}"
       sy="{{me.scale}}" sz="{{me.scale}}" x="{{me.x}}" y="{{me.y}}" z="{{me.z}}" rx="{{me.rx}}" ry="{{me.ry}}" rz="{{me.rz}}" hidden="{{app.fn.getThreeStateBoolInv(me.visible)}}" billboard="{{me.billboard}}"
-      occlude="{{me.occlude}}" decal="{{me.decal}}" experimental-one-sided="{{me.experimentalOneSided}}" opacity="{{me.opacity}}" pivot="{{me.pivot}}" shader="{{me.shader}}"></twx-dt-image>`;
+      occlude="{{me.occlude}}" decal="{{me.decal}}" experimental-one-sided="{{me.experimentalOneSided}}" opacity="{{me.opacity}}" pivot="{{me.pivot}}" shader="{{me.shader}}">#leaderlines#</twx-dt-image>`;
       return this.builtWidget('twx-dt-image', runtimeTemplate, initProps);
     }
 
@@ -387,7 +390,7 @@
       hidden="{{app.fn.getThreeStateBoolInv(me.visible)}}" billboard="{{me.billboard}}" occlude="{{me.occlude}}" decal="{{me.decal}}" experimental-one-sided="{{me.experimentalOneSided}}"  opacity="{{me.opacity}}" 
       pivot="{{me.pivot}}" hidden="{{app.fn.getThreeStateBoolInv(me.visible)}}" ng-src="{{me.src | trustUrl}}" src="{{me.src}}" shader="{{me.shader}}" height="{{me.height}}" width="{{me.width}}" 
       canvasheight="{{me.canvasheight}}" canvaswidth="{{me.canvaswidth}}" imageattrs="{{app.fn.buildImageAttrs(me.imagex,me.imagey,me.imageattrs)}}" textattrs="{{app.fn.buildTextAttrs(me.textx,me.texty,me.font,me.fontsize,me.textattrs)}}"
-      canvasgrowthoverride="{{me.canvasgrowthoverride}}" textx="{{me.textx}}" texty="{{me.texty}}" imagex="{{me.imagex}}" imagey="{{me.imagey}}" text="{{me.text}}" interactable-hint="true"></twx-dt-sensor>`;
+      canvasgrowthoverride="{{me.canvasgrowthoverride}}" textx="{{me.textx}}" texty="{{me.texty}}" imagex="{{me.imagex}}" imagey="{{me.imagey}}" text="{{me.text}}" interactable-hint="true">#leaderlines#</twx-dt-sensor>`;
     
       return this.builtWidget('twx-dt-sensor', runtimeTemplate, props);
     }
@@ -764,6 +767,307 @@
       return this.builtWidget('twx-dt-3dtoggle-button', runtimeTemplate, props).replace(' name="click" ', ' name="pressed" ')
     }
 
+    twxDtWayfinder(initProps) {
+      let defaults = {
+        ribbonColor: '#FFA500',
+        eventRadius: 0.25,
+        wayfinderDisplayBoundary: 0.5,
+        autoAdvance: false,
+        looping: false,
+        showRibbon: true,
+        showWaypoints: true,
+        showLabels: true,
+        labelsOnTop: false,
+        enabled: true,
+        showReticle: true,
+        selectedWaypointIndex: 0,
+        waypointsData: [],
+        services: ['next','previous']
+      }
+
+      let props = this.builtWidgetDefaults(initProps,defaults);
+      let runtimeTemplate = '';
+
+      /* this.renderer.setShader("navfogged", 
+      `attribute vec3 vertexPosition;
+      attribute vec2 vertexTexCoord;
+      varying vec2 texCoord;
+      varying float dist;
+      uniform mat4 modelViewProjectionMatrix;
+      uniform mat4 modelViewMatrix;
+      uniform mat4 modelMatrix;
+      uniform mat4 normalMatrix;
+
+      void main() {
+        vec4 vertexNormal=vec4(0.,0.,1.,0.);
+        vec4 vp = vec4(vertexPosition, 1.0);
+        gl_Position = modelViewProjectionMatrix * vp;
+        texCoord = vertexTexCoord;
+        vec3 vv = vec3(modelViewMatrix * vp);
+        dist = length(vv);
+      }`, `precision mediump float;
+      varying vec2 texCoord;
+      varying float dist;
+      uniform sampler2D img;
+      uniform float fade;
+      uniform float r;
+      uniform float g;
+      uniform float b;
+      uniform vec4 surfaceColor;
+
+      void main(void) {
+        gl_FragColor = vec4(r,g,b, 1.);
+      }`); */
+
+      const forholo = this.runningOnHololens;
+      const reticleTagalongDistance = 1;
+      const waypointLabelStyle = 'padding: 4em;';
+      const bracketsImagePath = 'img/wayfinder_frame.png';
+      const waypointImagePath = 'img/waypoint_placeholder.svg';
+
+      const screenOverlayElements = `
+        <div
+          ng-show="wayfinderReticleVisibility"
+          style="height: 100vh; width: 100vw; top: 0vh; position: absolute; pointer-events: none;"
+        >
+          <img
+            id="wayfinder_frame"
+            src="${bracketsImagePath}"
+            style="width: 144px; height: 144px; margin-left:-72px; margin-top:-72px; top: 50%; left: 50%; pointer-events: none; position:absolute;"
+          />
+          <img
+            id="wayfinder_circle"
+            src="{{app.fn.getWayfinderIconSource('wayfinder_circle',me.ribbonColor)}}"
+            style="width: 48px; height: 48px; margin-left:-24px; margin-top:-24px; top: 50%; left: 50%; pointer-events: none; position:absolute;"
+          />
+          <img
+            id="wayfinder_icon"
+            src="{{app.fn.getWayfinderIconSource('wayfinder_icon',me.ribbonColor)}}"
+            style="width: 20px; height: 24px; margin-left:-10px; margin-top:-12px; top: 50%; left: 50%; pointer-events: none; position:absolute;"
+          />
+        </div>
+        <div
+          ng-show="wayfinderOffscreenIndicatorVisibility"
+          style="height: 100vh; width: 100vw; top: 0vh; position: absolute; pointer-events: none;"
+        >
+          <img
+            id="wayfinder_arrow"
+            src="{{app.fn.getWayfinderIconSource('wayfinder_arrow',me.ribbonColor)}}"
+            style="width: 24px; height: 24px; margin-left:-12px; margin-top:-12px; transform: {{wayfinderOffscreenIndicatorRotation}}; top: {{wayfinderOffscreenIndicatorTop}}; left: {{wayfinderOffscreenIndicatorLeft}}; pointer-events: none; position:absolute;"
+          />
+        </div>
+      `;
+
+      // Bad practise :( guys!!!
+      const vs1g = `
+        <script name="navfogged" type="x-shader/x-vertex"> 
+          attribute vec3 vertexPosition;
+          attribute vec2 vertexTexCoord;
+          varying vec2 texCoord;
+          varying float dist;
+          uniform mat4 modelViewProjectionMatrix;
+          uniform mat4 modelViewMatrix;
+          uniform mat4 modelMatrix;
+          uniform mat4 normalMatrix;
+
+          void main() {
+            vec4 vertexNormal=vec4(0.,0.,1.,0.);
+            vec4 vp = vec4(vertexPosition, 1.0);
+            gl_Position = modelViewProjectionMatrix * vp;
+            texCoord = vertexTexCoord;
+            vec3 vv = vec3(modelViewMatrix * vp);
+            dist = length(vv);
+          }
+          </script>
+      `;
+      const ps1g = `
+        <script name="navfogged" type="x-shader/x-fragment">
+          precision mediump float;
+          varying vec2 texCoord;
+          varying float dist;
+          uniform sampler2D img;
+          uniform float fade;
+          uniform float r;
+          uniform float g;
+          uniform float b;
+          uniform vec4 surfaceColor;
+
+          void main(void) {
+            gl_FragColor = vec4(r,g,b, 1.);
+          }
+        </script>
+      `;
+
+      const ribbonElements = `
+        <div ng-repeat="obj in wayfinderHelper.ribbonSphereObjects">
+          <twx-dt-model
+            id="{{obj.name}}"
+            x=0 y=0 z=0
+            rx=0 ry=0 rz=0
+            opacity=1.0
+            src="{{obj.src}}"
+            decal=true
+            hidden=true
+            shader="navfogged"
+          >
+          </twx-dt-model>
+        </div>
+      `;
+      const ctrl = `
+      <div ng-wayfinder 
+        id-field=${props.id}
+        isholo-field=${forholo}
+        enabled-field="me.enabled"
+        showwaypoints-field={{me.showWaypoints}}
+        showribbon-field={{me.showRibbon}}
+        showreticle-field={{me.showReticle}}
+        wayfinderdisplayboundary-field={{me.wayfinderDisplayBoundary}}
+        eventradius-field={{me.eventRadius}}
+        autoadvance-field={{me.autoAdvance}}
+        looping-field={{me.looping}}
+        waypointsdata-field="me.waypointsData"
+        selectedwaypointindex-field="me.selectedWaypointIndex"
+        selectedwaypointdata-field="me.selectedWaypointData"
+        ribboncolor-field={{me.ribbonColor}}
+        showlabels-field={{me.showLabels}}
+        reticle-tagalong-distance-field = ${reticleTagalongDistance}
+        delegate-field="delegate"
+      >
+      </div>`;
+
+      const waypointElementsForMobileAndPreview = `
+        <twx-dt-image
+          id="activeWaypointImage"
+          src="${waypointImagePath}"
+          opacity=1.0
+          sx=1 sy=1 sz=1
+          hidden=true
+          decal=true
+          billboard=true
+          shader=""
+        >
+        </twx-dt-image>
+        <twx-dt-label
+          id="activeWaypointLabel"
+          class="waypoint-label"
+          y=0.09
+          text=""
+          style="${waypointLabelStyle}"
+          sx=1 sy=1 sz=1
+          hidden=true
+          billboard=true
+          decal={{me.labelsOnTop}}
+          opacity=1.0
+        >
+        </twx-dt-label>
+      `;
+      const waypointElementsForHoloLens = `
+          <twx-dt-group
+            id ="activeWaypoint"
+            hidden=true
+          >
+            ${waypointElementsForMobileAndPreview}
+          </twx-dt-group>
+        `;
+
+      const guideElementsForHoloLens = `
+          <twx-dt-group
+            id="wayPointGuide"
+            tagalong=2 tagalong-snapping-distance=0 tagalong-offset="0 ${reticleTagalongDistance}"
+            hidden=true
+          >
+            <twx-dt-image
+              id="wayPointGuideBrackets"
+              height=0.09 width=0.09
+              src="${bracketsImagePath}"
+              hidden=-1
+              decal=true
+            >
+            </twx-dt-image>
+            <twx-dt-image
+              id="wayPointGuideCompass"
+              height=0.04
+              z=-0.001
+              src="{{app.fn.getWayfinderIconSource('wayfinder_arrow',me.ribbonColor)}}"
+              hidden=-1
+              decal=true
+            >
+            </twx-dt-image>
+            <twx-dt-image
+              id="wayPointGuideCircle"
+              height=0.04 width=0.04
+              z=-0.001
+              src="{{app.fn.getWayfinderIconSource('wayfinder_circle',me.ribbonColor)}}"
+              hidden=-1
+              decal=true
+            >
+            </twx-dt-image>
+            <twx-dt-image
+              id="wayPointGuideIcon"
+              height=0.02
+              z=-0.002
+              src="{{app.fn.getWayfinderIconSource('wayfinder_icon',me.ribbonColor)}}"
+              hidden=-1
+              decal=true
+            >
+            </twx-dt-image>
+            <twx-dt-image
+              id="wayPointGuidePlaceholder"
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+              z=-0.0003
+              height=0.0001
+              hidden=-1
+              decal=false
+            >
+            </twx-dt-image>
+          </twx-dt-group>
+        `;
+
+      if (forholo) {
+        runtimeTemplate = (
+          ctrl +
+          waypointElementsForHoloLens +
+          guideElementsForHoloLens +
+          // these are required just for preview:
+          screenOverlayElements +
+          ribbonElements
+        );
+      } else {
+        runtimeTemplate = ctrl + waypointElementsForMobileAndPreview + screenOverlayElements + ribbonElements;
+      }
+
+      return this.builtWidget('twx-dt-wayfinder', runtimeTemplate, props);
+    }
+
+    twxDt3dLeaderline(initProps) {
+      let defaults = {
+        x: 0,
+        y: 0,
+        z: 0,
+        color: 'rgb(0,255,255)',
+        thickness: '0.8',
+        kneeJointLength: 0
+      }
+
+      let props = this.builtWidgetDefaults(initProps,defaults);
+
+      let runtimeTemplate = `<twx-dt-3dleaderline
+            id="${props.id}"
+            x={{me.x}}
+            y={{me.y}}
+            z={{me.z}}
+            from="{{me.originWidgetId}}"
+            to={{me.destinationWidgetId}}
+            occurrence="{{me.occurrence}}"
+            knee-joint-length={{me.kneeJointLength}}
+            thickness={{me.thickness}}
+            color="{{me.color}}"
+          >
+          </twx-dt-3dleaderline>`;
+
+        return this.builtWidget('twx-dt-3dLeaderline', runtimeTemplate, props);
+    }
+
     builtWidgetDefaults(initProps, defaults) {
       for(let prop in defaults) {
         if(typeof initProps[prop] === "undefined")
@@ -797,51 +1101,49 @@
     }
 
     builtInitProperties(template, initProps) {
-    let templStr = new String(template)
-    let re = new RegExp(/\bme.(\w+)/gm);
-    let m;
-    let propsArray = [];
-    do {
-      m = re.exec(template);
-      if(m)
-        propsArray.push(m[1]);
-    } while(m);
-    //let propsArray = Array.from(templStr.matchAll(/\bme.(\w+)/gm), m => m[1]); //propsArray = template.match(/\b(?<=me.)\w+/gm);  //This is the old regex producing errors on iOS
+      let templStr = new String(template)
+      let re = new RegExp(/\bme.(\w+)/gm);
+      let m;
+      let propsArray = [];
+      do {
+        m = re.exec(template);
+        if (m)
+          propsArray.push(m[1]);
+      } while (m);
+      //let propsArray = Array.from(templStr.matchAll(/\bme.(\w+)/gm), m => m[1]); //propsArray = template.match(/\b(?<=me.)\w+/gm);  //This is the old regex producing errors on iOS
       let properties = {};
-      properties.widgetName = {value: initProps.id,datatype:"string"}
+      properties.widgetName = {
+        value: initProps.id,
+        datatype: "string"
+      }
       // Remove duplicates like scale
       propsArray.forEach((prop) => {
         if (typeof properties[prop] === "undefined") {
           properties[prop] = {};
           // Check if we have input Values for init and if so add it to value
-          if(typeof initProps[prop] !== "undefined") {
+          if (typeof initProps[prop] !== "undefined") {
             properties[prop].value = initProps[prop];
-          }
-          else {
+          } else {
             properties[prop].value = undefined
           }
-          
+
           //Studio default datatype Number
-          if(prop==="src" || prop==="sequence")
-            properties[prop].datatype="resource_url";
-          else if(['x','y','z','rx','ry','rz','width','height','opacity'].includes(prop)) {
+          if (prop === "src" || prop === "sequence")
+            properties[prop].datatype = "resource_url";
+          else if (['x', 'y', 'z', 'rx', 'ry', 'rz', 'width', 'height', 'opacity'].includes(prop)) {
             properties[prop].datatype = "number";
-          }
-          else if(['visible','billboard','occlude','decal','experimentalOneSided','tagalong','enableStateFormatting'].includes(prop)) {
+          } else if (['visible', 'billboard', 'occlude', 'decal', 'experimentalOneSided', 'tagalong', 'enableStateFormatting'].includes(prop)) {
             properties[prop].datatype = "boolean";
-          }
-          else if(['scale','shader','text','class'].includes(prop)) {
+          } else if (['scale', 'shader', 'text', 'class'].includes(prop)) {
             properties[prop].datatype = "string";
-          }
-          else if(['pivot'].includes(prop)) {
+          } else if (['pivot'].includes(prop)) {
             properties[prop].datatype = "select";
-          }
-          else {
+          } else {
             properties[prop].datatype = "string";
           }
 
-          if(properties[prop].value == undefined) {
-            switch(prop) {
+          if (properties[prop].value == undefined) {
+            switch (prop) {
               //Numbers
               case 'x':
               case 'y':
@@ -879,8 +1181,8 @@
                 properties[prop].value = '';
                 break;
               case 'stateFormatValue':
-                  properties[prop].value = 'text';
-                  break;
+                properties[prop].value = 'text';
+                break;
               default:
                 break;
             }
@@ -889,9 +1191,9 @@
       });
 
       let propertiesStr = "";
-      for(let name in properties) {
+      for (let name in properties) {
         let prop = properties[name];
-        propertiesStr+=`<twx-widget-property name="${name}" datatype="${prop.datatype}" ${(prop.value === '' ? ' value' : (prop.value != undefined ? ` value="` + prop.value +`"` : ''))}></twx-widget-property>`
+        propertiesStr += `<twx-widget-property name="${name}" datatype="${prop.datatype}" ${(prop.value === '' ? ' value' : (prop.value != undefined ? ` value="` + prop.value +`"` : ''))}></twx-widget-property>`
       }
       return propertiesStr;
     }
@@ -909,6 +1211,18 @@
         if(typeof initProps.children !== "undefined") {
           var gotOnlyParentProps = runtimeTemplate.substring(0,runtimeTemplate.indexOf('#children#')) // We don't want to let the parent get all properties from children so make a sub string to only get parents attributes
           runtimeTemplate = runtimeTemplate.replace("#children#", this.builtChildren(initProps.children));
+        }
+        // Introduce leaderlines for easier use a bit different as children in Panels and to be sure they are only as valid for 3DGauges and 3DImages this small changed if here
+        if(typeof initProps.leaderlines !== "undefined" && (initProps.originalWidget === "twx-dt-sensor" || initProps.originalWidget === "twx-dt-image")) {
+          var gotOnlyParentProps = runtimeTemplate.substring(0,runtimeTemplate.indexOf('#leaderlines#')) // We don't want to let the parent get all properties from children so make a sub string to only get parents attributes
+          initProps.leaderlines.forEach(line => {
+            line.originalWidget = "twx-dt-3dleaderline";
+            line.originWidgetId = initProps.id;
+            // See twxDtLeaderLine.design.js in delegate getKneeJointLengthForWidget for more info!
+            if(typeof line.kneeJointLength !== "undefined")
+              line.kneeJointLength = (initProps.width ? initProps.width : 0.1) * (initProps.scale ? initProps.scale : 1.0) / 2.0 * 1.5; 
+          })
+          runtimeTemplate = runtimeTemplate.replace("#leaderlines#", "<twx-container-content>" + this.builtChildren(initProps.leaderlines) +"</twx-container-content>");
         }
     
         let myWidget = '<twx-widget widget-id="' + initProps.id + '" original-widget="' + tagName + '" widget-name="' + initProps.id + '">' + this.builtEvents(initProps.events) + this.builtServices(initProps.services) + this.builtInitProperties(initProps.children ? gotOnlyParentProps : runtimeTemplate, initProps) + '<twx-widget-content>' + runtimeTemplate + '</twx-widget-content></twx-widget>';
