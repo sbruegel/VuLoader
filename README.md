@@ -161,7 +161,7 @@ Here i loaded the Navigator Widget form [Octo Widgets](https://github.com/steveg
 
 ### loadShader(shaderName, vertexHl, fragmentHl, vertexGl, fragmentGl)
 
-*note: this function is overloaded! If you just pass the first parameter the function is loading shader files like shaderName.vertex.glsl etc. which needs to be present at `Uploaded/Extensions/Shader` folder instead of need all strings*
+*Note: this function is overloaded! If you just pass the first parameter the function is loading shader files like shaderName.vertex.glsl etc. which needs to be present at `Uploaded/Extensions/Shader` folder instead of need all strings*
 - **shaderName**: name and identifier of the shader on the one hand it is what we use later on widget properties called `shader` on the other hand (if just this parameter is passed) it is the name of the files the function is looking for
 - **vertexHL**: string of the hlsl vertex shader
 - **fragmentHL**: string of the hlsl fragment+pixel shader
@@ -242,7 +242,7 @@ VuLoader.widgetFactory.addWidget({
   originalWidget: "twx-dt-sensor",
   id: "3DGauge-1",
   src: "app/resources/Default/vu_alert1.svg",
-  y: + i / 2,
+  y: 2,
   billboard: false,
   events:[{name:"click", value: "someExample(widgetId)"}],
   leaderlines: [{
