@@ -5,18 +5,18 @@ A repository contains a helpful Vuforia Studio script, giving you the ability to
 First of we need to prepare our Vuforia Studio Project, to be able to use this script.
 
 ### Setup Extensions folder + add VuLoader.js
-I highly recommend to create a separate "Extensions" folder into the default Uploaded folder in resources.
+I highly recommend to create a separate "Extensions" folder in the default Uploaded folder in resources.
 If you never create a sub directory in Studio before, do the following:
 - open a new Windows Explorer/ Finder window to browse your files
-- go to Documents/VuforiaStudio/Projects/**YourProjectName**/src/resources/Uploaded (Uploaded folder is only present if you added at least one file to the resources. Otherwise you need to create it manually!)
-- Create the new "Extensions" folder
+- go to Documents/VuforiaStudio/Projects/**YourProjectName**/src/resources/Uploaded (Uploaded folder is only present, if you added at least one file to the resources. Otherwise you need to create it manually!)
+- Create the new "Extensions" folder in it
 - Create a VuLoader folder and copy the VuLoader.js into it OR if you manage your experience via Git use [submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules): `git submodule add https://github.com/sbruegel/VuLoader.git src/phone/resources/Uploaded/Extensions/VuLoader`
 
 ### Load script with callback
 
 Add following code into the view where you want to use it.
-The `onload` function is the callback so we are sure the script is loaded before we use the functionality
-```
+The `onload` function is the callback, so we are sure the script is loaded before we use any functionality
+``` JS
 // Add the Extension loader to html head
 var scriptTag = document.createElement('script');
 scriptTag.src = "app/resources/Uploaded/Extensions/VuLoader/VuLoader.js";
@@ -26,9 +26,10 @@ document.head.appendChild(scriptTag);
 
 ### Working with callback function
 
-After loading the script we want to execute some function like loading custom widgets or shader so we can later use them to init Widgets. In the example above we named the function `initLoadFunction` so here an example how such a function can look like:
+After loading the script, we want to execute some function like loading custom widgets or shader so we can later use them to init Widgets. In the example above we named the function `initLoadFunction`. So here an example how such a function can look like:<br>
+*Note: Vuforia uses jslint to warn you by syntax issues or bugs. It also warn that async functions are only supported in es8 and above. However this is working fine on all devices and can be ignored. It is possible to tell JS Lint to use es8, if you add `/* jslint esversion: 8 */` to the top of the home.js file*
 
-```
+``` JS
 async function initLoadFunction() {
 
   await VuLoader.getScript('app/resources/Uploaded/Extensions/html2canvas/html2canvas.min.js');
@@ -46,7 +47,7 @@ async function initLoadFunction() {
 
 So now everything is loaded and ready we can start using the Widget Factory to create Widgets on the fly via JS
 
-```
+``` JS
 $scope.$on("vuloaderready",function(){
   VuLoader.widgetFactory.addWidget({
       originalWidget: "twx-dt-model",
@@ -73,7 +74,7 @@ This asynchronous function helps you to load all kind of file and provides a cal
 
 **Example**:
 
-```
+``` JS
 VuLoader.getFile("app/resources/Uploaded/Interfaces/main-menu.html").then(content=>$scope.add2dRuntimeWdg(content))
 ```
 
@@ -89,7 +90,7 @@ It additionally been used by `loadExtension`
 
 **Example**:
 
-```
+``` JS
 VuLoader.getScript('app/resources/Uploaded/Extensions/html2canvas/html2canvas.min.js');
 ```
 
@@ -105,7 +106,7 @@ Long story short: This allows you to show 2D Interface (HTML/CSS code) on HoloLe
 This asynchronous function will inject custom Widgets/Extensions to the `widgetFactory` it allows you nearly the same patterns like index.js / design.js of an custom Extension.
 You can load dependencies (can detect if libs/files/shaders are already loaded) and register the widgets in the factory
 
-```
+``` JS
 // Here the magic happens load and define a new extension (widget) and its libs you have placed at /Uploaded/Extensions/YOUR-extension
   let shaderNavigator = ['navpinger','navfoggedLit']
   if(!VuLoader.runningOnHololens)
@@ -173,7 +174,7 @@ It additionally been used by `loadExtension`, if an extension has defined them i
 
 **Example**:
 
-```
+``` JS
 VuLoader.loadShader('flow_onedir_scale');
 ```
 
@@ -189,7 +190,7 @@ The most important functions are the following:
 
 This function will inject "compiled" 3D Widgets to the HTML DOM so they get added into the Scene.
 
-```
+``` JS
 VuLoader.widgetFactory.addWidget({
     originalWidget: "twx-dt-model",
     id: "model-1",
@@ -197,5 +198,56 @@ VuLoader.widgetFactory.addWidget({
     y:"0.1",
     z:"0.2",
     events:[{name:"modelLoaded", value: "someExample()"}]
+})
+```
+
+To use init Panels with widgets inside you can use the `children` key in JSON. Like:<br>
+*Note: the visibility also supports `-1` to use the visibility from parent elements, like here from a panel*
+``` JS
+VuLoader.widgetFactory.addWidget({
+  originalWidget: "twx-dt-3dpanel",
+  id: "onboard-pnl",
+  tagalong: true,
+  width: 0.3,
+  height: 0.3,
+  children: [{
+      originalWidget: "twx-dt-image",
+      width: 0.3,
+      height:  0.3,
+      z: -0.005,
+      id: "onboard-content-1",
+      src: canvas.toDataURL(),// This works only because my dyn injector fix an issue that 3D Images not trust srcs
+      visible: -1
+    },{
+      originalWidget: "twx-dt-3dbutton",
+      text: "Continue",
+      color: panelMainColor,
+      fontColor: "rgba(255,255,255,1);",
+      width: 0.3,
+      height:  0.04,
+      z: -0.008,
+      y: -0.17,
+      id: "onboard-continue-btn",
+      visible: -1,
+      events: [{name:"click", value:"addMainMenu(); view.wdg['onboard-pnl'].visible=false"}]
+    }]
+});
+```
+
+If you like to use Leader Lines, the approach is very similar, but it uses `leaderlines` key instead!<br>
+It will directly create them as `twx-dt-3dleaderline` so no `originalWidget` parameter is needed in comparison to children.
+
+``` JS
+VuLoader.widgetFactory.addWidget({
+  originalWidget: "twx-dt-sensor",
+  id: "3DGauge-1",
+  src: "app/resources/Default/vu_alert1.svg",
+  y: + i / 2,
+  billboard: false,
+  events:[{name:"click", value: "someExample(widgetId)"}],
+  leaderlines: [{
+    id: "3DLeaderline-1",
+    x: 
+  }]
 })
 ```
