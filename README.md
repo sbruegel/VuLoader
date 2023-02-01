@@ -247,7 +247,9 @@ VuLoader.widgetFactory.addWidget({
   events:[{name:"click", value: "someExample(widgetId)"}],
   leaderlines: [{
     id: "3DLeaderline-1",
-    x: 
+    x: 1,
+    y: 0.3,
+    z: 0.1
   }]
 })
 ```
