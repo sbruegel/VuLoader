@@ -1,5 +1,6 @@
 # VuLoader
 A repository contains a helpful Vuforia Studio script, giving you the ability to load Shader, Extensions, Libs and create Widget on the fly via a JS api
+*Note: Yeah it is working on View for DP!*
 
 ## Getting Started
 First of we need to prepare our Vuforia Studio Project, to be able to use this script.
@@ -232,6 +233,76 @@ VuLoader.widgetFactory.addWidget({
       events: [{name:"click", value:"addMainMenu(); view.wdg['onboard-pnl'].visible=false"}]
     }]
 });
+```
+
+The VuLoader also support generating targets. This is a bit hackier than the stock widgets. Targets are incorporated with trackers and in general the default view element. To let it work VuLoader recompile the hole view you may notice it in runtime with a short black flickering.
+This mean it possible create renderer objects which can lead to errors in logs! However it works pretty well.
+Additionally i try to optimize the naming convertions through the different target so each target use `src` for the data set and `targetId` for a specific marker or target of a data set and `size` as scale value for target (Image Target and ThingMark former `width`).
+Last if you want to use a Guide View you need to use `targets.push` and `setGuideImageData` functions (these are ootb build in functions only triggerable from home.js). Following some examples:
+``` JS
+$scope.createVuMark = function() {
+  VuLoader.widgetFactory.addWidget({
+      originalWidget: "twx-dt-target",
+      id: "tm-1",
+      targetId: "0:0"
+  })
+  targets.push(document.querySelector("#tm-1"));
+  setGuideImageData();
+}
+
+$scope.createSpatial = function() {
+  VuLoader.widgetFactory.addWidget({
+      originalWidget: "twx-dt-target-spatial",
+      id: "st-1"
+  })
+  targets.push(document.querySelector("#st-1"));
+  setGuideImageData();
+}
+
+$scope.createImage = function() {
+  VuLoader.widgetFactory.addWidget({
+      originalWidget: "twx-dt-target-image",
+      id: "it-1",
+      src: "app/resources/Uploaded/SampleDevice",
+      rx: 0,
+      x: 0.6,
+      y: 1,
+      z: -0.15,
+      size: 0.05
+  })
+  targets.push(document.querySelector("#it-1"));
+  setGuideImageData();
+}
+
+$scope.createModel = function() {
+  VuLoader.widgetFactory.addWidget({
+      originalWidget: "twx-dt-target-model",
+      id: "mt-1",
+      src: "app/resources/Uploaded/Blue",
+      url: "app/resources/Uploaded/Blue_GuideView_0000_2.png",
+      rx: 180,
+      y: 1.2,
+      x: 0.6
+  })
+  // Adds the Guide View this are build in functions so no difintion on your side needed
+  // These are only triggerable from home.js
+  targets.push(document.querySelector("#mt-1"));
+  setGuideImageData();
+}
+
+$scope.createArea = function() {
+  VuLoader.widgetFactory.addWidget({
+      originalWidget: "twx-dt-target-area",
+      id: "at-1",
+      src: "app/resources/Uploaded/sample",
+      targetId: "sample",
+      showRepresentation: false,
+      y: 1.3294914960861206
+  })
+  // Guide View Image for Area Targets not working mobile devices
+  targets.push(document.querySelector("#at-1"));
+  setGuideImageData();
+}
 ```
 
 If you like to use Leader Lines, the approach is very similar, but it uses `leaderlines` key instead!<br>

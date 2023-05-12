@@ -255,12 +255,12 @@
       this.runningOnHololens = runningOnHololens;
 
       this.widgets = {
+        "twx-dt-tracker"        : this.twxDtTracker.bind(this),
         "twx-dt-target"         : this.twxDtTarget.bind(this),
-        //"twx-dt-tracker"        : this.twxDtTracker.bind(this),
-        //"twx-dt-target-spatial" : this.twxDtTarget.bind(this),
-        //"twx-dt-target-image"   : this.twxDtTarget.bind(this),
-        //"twx-dt-target-model"   : this.twxDtTarget.bind(this),
-        //"twx-dt-target-area"    : this.twxDtTarget.bind(this),
+        "twx-dt-target-spatial" : this.twxDtTargetSpatial.bind(this),
+        "twx-dt-target-image"   : this.twxDtTargetImage.bind(this),
+        "twx-dt-target-model"   : this.twxDtTargetModel.bind(this),
+        "twx-dt-target-area"    : this.twxDtTargetArea.bind(this),
         "twx-dt-image"          : this.twxDtImage.bind(this),
         "twx-dt-label"          : this.twxDtLabel.bind(this),
         "twx-dt-sensor"         : this.twxDtSensor.bind(this),
@@ -320,21 +320,93 @@
 
     // Not working right now, Targets get init on experience load and can't added later (with current know how)
     twxDtTarget(initProps) {
-    let defaults = {
-      markerId: '',
-      width: 0.0254,
-      istracked: false,
-      trackingIndicator: true,
-      stationary: true,
-      url: "app/resources/Default/thing_code_phantom.png"
-    }
-    
-    let props = this.builtWidgetDefaults(initProps,defaults);
-    
-    let runtimeTemplate = `<twx-dt-target id="${props.id}" src="{{'vuforia-vumark:///vumark?id=' + me.markerId}}" guide-src="app/resources/Default/thing_code_phantom.png" size="{{me.width}}" x="{{me.x}}" y="{{me.y}}" z="{{me.z}}" rx="{{me.rx}}" ry="{{me.ry}}" rz="{{me.rz}}"  istracked="{{me.istracked}}" trackingIndicator="{{me.trackingIndicator}}" stationary="{{me.stationary}}"><twx-dt-image id="${props.id}-image" sx = "{{me.width*4.51}}" sy = "{{me.width*4.51}}" sz = "{{me.width*4.51}}" x="{{me.x}}" y="{{me.y}}" z="{{me.z}}" rx="{{me.rx}}" ry="{{me.ry}}" rz="{{me.rz}}" hidden="{{!me.trackingIndicator}}" billboard="{{me.billboard}}" occlude="{{me.occlude}}" decal="{{me.decal}}" shader="recogniser;active f {{pulse}}"  src="img/recognised.png?name=sampler0 img/recognised2.png?name=sampler1" trackingIndicator="{{me.trackingIndicator}}" stationary="{{me.stationary}}"></twx-dt-image></twx-dt-target>`
+      let defaults = {
+        targetId: '',
+        size: 0.0254,
+        istracked: false,
+        trackingIndicator: true,
+        stationary: true,
+        src: "vumark",
+        isVumark: false,
+        url: "app/resources/Default/thing_code_phantom.png",
+        rx: -90
+      }
+      
+      let props = this.builtWidgetDefaults(initProps,defaults);
+      
+      let runtimeTemplate = `<twx-dt-target id="${props.id}" src="vuforia-vumark:///${props.src}?id=${props.targetId}" guide-src="app/resources/Default/thing_code_phantom.png" size="{{me.size}}" x="{{me.x}}" y="{{me.y}}" z="{{me.z}}" rx="{{me.rx}}" ry="{{me.ry}}" rz="{{me.rz}}"  ${ props.isVumark ? 'isVumark=""' : '' } istracked="{{me.istracked}}" trackingIndicator="{{me.trackingIndicator}}" stationary="{{me.stationary}}"><twx-dt-image id="${props.id}-image" sx = "{{me.size*4.51}}" sy = "{{me.size*4.51}}" sz = "{{me.size*4.51}}" x="{{me.x}}" y="{{me.y}}" z="{{me.z}}" rx="{{me.rx}}" ry="{{me.ry}}" rz="{{me.rz}}" hidden="{{!me.trackingIndicator}}" billboard="{{me.billboard}}" occlude="{{me.occlude}}" decal="{{me.decal}}" shader="recogniser;active f {{pulse}}"  src="img/recognised.png?name=sampler0 img/recognised2.png?name=sampler1" trackingIndicator="{{me.trackingIndicator}}" stationary="{{me.stationary}}"></twx-dt-image></twx-dt-target>`;
 
       return this.builtWidget('twx-dt-target', runtimeTemplate, props);
     }
+
+    twxDtTargetSpatial(initProps) {
+      let defaults = {
+        istracked: false,
+        rx: -90,
+        enablescalegesture: false,
+        enabletranslategesture: true,
+        enablerotategesture: true,
+        services: ['resetGesture']
+      }
+      
+      let props = this.builtWidgetDefaults(initProps,defaults);
+
+      let runtimeTemplate = `<twx-dt-target id="${props.id}" x="{{me.x}}" y="{{me.y}}" z="{{me.z}}" rx="{{me.rx}}" ry="{{me.ry}}" rz="{{me.rz}}"  src="spatial://" istracked="{{me.istracked}}" enabletranslategesture="{{me.enabletranslategesture}}" enablerotategesture="{{me.enablerotategesture}}" enablescalegesture="{{me.enablescalegesture}}"></twx-dt-target>`;
+
+      return this.builtWidget('twx-dt-target', runtimeTemplate, props);
+    }
+
+    twxDtTargetImage(initProps) {
+      let defaults = {
+        size: 0.0254,
+        istracked: false,
+        trackingIndicator: true,
+        stationary: true,
+        rx: -90,
+        targetId: ''
+      }
+      
+      let props = this.builtWidgetDefaults(initProps,defaults);
+
+      let runtimeTemplate = `<twx-dt-target id="${props.id}" guide-src="${ props.url || '/extensions/images/placeholder_img_target.svg' }" size="{{me.size}}" x="{{me.x}}" y="{{me.y}}" z="{{me.z}}" rx="{{me.rx}}" ry="{{me.ry}}" rz="{{me.rz}}"  src="vuforia-image:///${props.src}?id=${encodeURIComponent(props.targetId)}" targetId="{{me.targetId}}" istracked="{{me.istracked}}" trackingIndicator="{{me.trackingIndicator}}" stationary="{{me.stationary}}"><twx-dt-image id="${props.id}-targetTracer" sx = "1" sy = "1" sz = "1" x="{{me.x}}" y="{{me.y}}" z="{{me.z}}" rx="{{me.rx}}" ry="{{me.ry}}" rz="{{me.rz}}" hidden="{{!me.trackingIndicator}}" billboard="{{me.billboard}}" occlude="{{me.occlude}}" decal="{{me.decal}}" shader="imageRecogniser;active f {{pulse}}; imageWidth f {{tracerWidth}}; imageHeight f {{tracerHeight}}" height="{{me.size}}" width="{{me.size}}"  src="img/recognisedSquare.png?name=gradientSampler" targetId="{{me.targetId}}" stationary="{{me.stationary}}"></twx-dt-image></twx-dt-target>`;
+
+      return this.builtWidget('twx-dt-target', runtimeTemplate, props);
+    }
+
+    twxDtTargetModel(initProps) {
+      let defaults = {
+        size: '',
+        istracked: false,
+        targetId: '',
+        representationSrc: ''
+      }
+      
+      let props = this.builtWidgetDefaults(initProps,defaults);
+
+      let runtimeTemplate = `<twx-dt-target id="${props.id}" guide-src=${props.url} src="vuforia-model:///${props.src}?id=${encodeURIComponent(props.targetId)}" representation-src=${props.representationSrc} x={{me.x}} y={{me.y}} z={{me.z}} rx={{me.rx}} ry={{me.ry}} rz={{me.rz}} size={{me.size}} showRepresentation=${props.representationSrc !== ''}></twx-dt-target>`;
+
+      return this.builtWidget('twx-dt-target', runtimeTemplate, props);
+    }
+
+    twxDtTargetArea(initProps) {
+      let defaults = {
+        istracked: false,
+        trackingIndicator: false,
+        stationary: true,
+        trackerId: '',
+        showRepresentation: false,
+        applyOcclusion: true,
+        guideText: '',
+        targetId: ''
+      }
+      
+      let props = this.builtWidgetDefaults(initProps,defaults);
+
+      let runtimeTemplate = `<twx-dt-target id="${props.id}" src="vuforia-area:///${props.src}?id=${encodeURIComponent(props.targetId)}"  guide-src="${this.runningOnHololens ? 'app/resources/_generated_/' + props.targetId + '-area-target-guide.png' : 'extensions/images/area-target-guide.png' }" size=0.1 representation-src="${props.src}_authoring.glb" showRepresentation="{{me.showRepresentation}}"  applyOcclusion="{{me.applyOcclusion}}" guide-text="${ props.guideText || 'Trying to locate ' + props.targetId }" istracked="{{me.istracked}}" trackingIndicator="{{me.trackingIndicator}}" stationary="{{me.stationary}}" x="{{me.x}}" y="{{me.y}}" z="{{me.z}}" rx="{{me.rx}}" ry="{{me.ry}}" rz="{{me.rz}}">` + ( props.applyOcclusion ? `<twx-dt-model id="${props.id}-occluder" src="${props.src}_navmesh.glb" occlude="true" opacity="1" hidden="false" decal="false" sx="1" sy="1" sz="1" x="{{me.x}}" y="{{me.y}}" z="{{me.z}}" rx="0" ry="0" rz="0"></twx-dt-model>` : '' ) + `</twx-dt-target>`;
+
+      return this.builtWidget('twx-dt-target', runtimeTemplate, props);
+    }
+
 
     twxDtLabel(initProps) {
       // Widget Defaults for props which are not defined by user or is a global default like x = 0
@@ -1240,24 +1312,29 @@
       angular.element(insertPos ? insertPos : document.querySelector("#tracker1 > twx-container-content")).append(widget);
       this.$compile(widget)(angular.element(document.querySelector("#tracker1")).scope());
       try{
-      if(widget) {
-        let models = widget.find("twx-dt-model")
-        for(let i = 0; i < models.length; i++){
-          let model = models[i];
-          if(model.id.endsWith("-panel") && model.getAttribute("src") == '{"type":"box","height":1,"width":1,"depth":0.01}') {
-            // This fix an error with panel widgets (buffer geometry) is not rendered correctly!
-            setTimeout(()=>{
-              //console.log(model.getAttribute("src"))
-              //if(window.twx.app.isPreview())
-                this.renderer.setProperties(model.id, {shader: "ButtonEdge"});
-              this.renderer.setTranslation(model.id,0,0,-0.01);
-              this.renderer.setScale(model.id,model.getAttribute("sx"),model.getAttribute("sy"),1);
-              this.scope.$applyAsync();
-            },0);
+        if(widget) {
+          let models = widget.find("twx-dt-model")
+          for(let i = 0; i < models.length; i++){
+            let model = models[i];
+            if(model.id.endsWith("-panel") && model.getAttribute("src") == '{"type":"box","height":1,"width":1,"depth":0.01}') {
+              // This fix an error with panel widgets (buffer geometry) is not rendered correctly!
+              setTimeout(()=>{
+                //console.log(model.getAttribute("src"))
+                //if(window.twx.app.isPreview())
+                  this.renderer.setProperties(model.id, {shader: "ButtonEdge"});
+                this.renderer.setTranslation(model.id,0,0,-0.01);
+                this.renderer.setScale(model.id,model.getAttribute("sx"),model.getAttribute("sy"),1);
+                this.scope.$applyAsync();
+              },0);
+            }
+          }
+          
+          if(widget.attr("original-widget") === "twx-dt-target") {
+            this.$compile(angular.element(document.querySelector("twx-dt-view")))(angular.element(document.querySelector("twx-dt-view")).scope());
+            //this.setGuideImageData(angular.element(document.querySelector("twx-dt-target"))[0]);
           }
         }
-      }
-    }catch(e){console.log(e)}
+      }catch(e){console.log(e)}
       /*if(widget) {
         let models = widget.find("twx-dt-model")
         for(let i = 0; i < models.length; i++){
